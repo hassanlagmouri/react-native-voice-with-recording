@@ -90,82 +90,92 @@ public class VoiceWithRecordingModule extends ReactContextBaseJavaModule {
                 return;
             }
 
-            // Initialize SpeechRecognizer
+            // Initialize SpeechRecognizer on main thread
             if (SpeechRecognizer.isRecognitionAvailable(reactContext)) {
-                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(reactContext);
-                speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                reactContext.runOnUiThread(new Runnable() {
                     @Override
-                    public void onReadyForSpeech(Bundle bundle) {
-                        Log.d(TAG, "Speech recognizer ready");
-                    }
+                    public void run() {
+                        try {
+                            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(reactContext);
+                            speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                                @Override
+                                public void onReadyForSpeech(Bundle bundle) {
+                                    Log.d(TAG, "Speech recognizer ready");
+                                }
 
-                    @Override
-                    public void onBeginningOfSpeech() {
-                        Log.d(TAG, "Speech beginning");
-                    }
+                                @Override
+                                public void onBeginningOfSpeech() {
+                                    Log.d(TAG, "Speech beginning");
+                                }
 
-                    @Override
-                    public void onRmsChanged(float v) {
-                        // Optional: handle volume changes
-                    }
+                                @Override
+                                public void onRmsChanged(float v) {
+                                    // Optional: handle volume changes
+                                }
 
-                    @Override
-                    public void onBufferReceived(byte[] bytes) {
-                        // Optional: handle buffer
-                    }
+                                @Override
+                                public void onBufferReceived(byte[] bytes) {
+                                    // Optional: handle buffer
+                                }
 
-                    @Override
-                    public void onEndOfSpeech() {
-                        Log.d(TAG, "Speech ended");
-                    }
+                                @Override
+                                public void onEndOfSpeech() {
+                                    Log.d(TAG, "Speech ended");
+                                }
 
-                    @Override
-                    public void onError(int error) {
-                        Log.e(TAG, "Speech recognition error: " + error);
-                        // Restart recognition if it's not a permanent error
-                        if (isRecording && error != SpeechRecognizer.ERROR_NO_MATCH) {
+                                @Override
+                                public void onError(int error) {
+                                    Log.e(TAG, "Speech recognition error: " + error);
+                                    // Restart recognition if it's not a permanent error
+                                    if (isRecording && error != SpeechRecognizer.ERROR_NO_MATCH) {
+                                        startSpeechRecognition();
+                                    }
+                                }
+
+                                @Override
+                                public void onResults(Bundle bundle) {
+                                    ArrayList<String> results = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                                    if (results != null && !results.isEmpty()) {
+                                        String transcript = results.get(0);
+                                        sendTranscriptEvent(transcript);
+                                    }
+                                    
+                                    // Restart recognition for continuous listening
+                                    if (isRecording) {
+                                        startSpeechRecognition();
+                                    }
+                                }
+
+                                @Override
+                                public void onPartialResults(Bundle bundle) {
+                                    // Optional: handle partial results
+                                }
+
+                                @Override
+                                public void onEvent(int i, Bundle bundle) {
+                                    // Optional: handle events
+                                }
+                            });
+
+                            // Start recording
+                            audioRecord.startRecording();
                             startSpeechRecognition();
-                        }
-                    }
+                            isRecording = true;
 
-                    @Override
-                    public void onResults(Bundle bundle) {
-                        ArrayList<String> results = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                        if (results != null && !results.isEmpty()) {
-                            String transcript = results.get(0);
-                            sendTranscriptEvent(transcript);
-                        }
-                        
-                        // Restart recognition for continuous listening
-                        if (isRecording) {
-                            startSpeechRecognition();
-                        }
-                    }
+                            // Start audio recording thread
+                            startAudioRecordingThread();
 
-                    @Override
-                    public void onPartialResults(Bundle bundle) {
-                        // Optional: handle partial results
-                    }
-
-                    @Override
-                    public void onEvent(int i, Bundle bundle) {
-                        // Optional: handle events
+                            promise.resolve(null);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error starting voice recording", e);
+                            promise.reject("START_ERROR", "Failed to start voice recording: " + e.getMessage());
+                        }
                     }
                 });
             } else {
                 promise.reject("SPEECH_NOT_AVAILABLE", "Speech recognition is not available on this device");
                 return;
             }
-
-            // Start recording
-            audioRecord.startRecording();
-            startSpeechRecognition();
-            isRecording = true;
-
-            // Start audio recording thread
-            startAudioRecordingThread();
-
-            promise.resolve(null);
         } catch (Exception e) {
             Log.e(TAG, "Error starting voice recording", e);
             promise.reject("START_ERROR", "Failed to start voice recording: " + e.getMessage());
@@ -182,11 +192,20 @@ public class VoiceWithRecordingModule extends ReactContextBaseJavaModule {
 
             isRecording = false;
 
-            // Stop speech recognition
+            // Stop speech recognition on main thread
             if (speechRecognizer != null) {
-                speechRecognizer.stopListening();
-                speechRecognizer.destroy();
-                speechRecognizer = null;
+                reactContext.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            speechRecognizer.stopListening();
+                            speechRecognizer.destroy();
+                            speechRecognizer = null;
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error stopping speech recognizer", e);
+                        }
+                    }
+                });
             }
 
             // Stop audio recording
@@ -212,12 +231,21 @@ public class VoiceWithRecordingModule extends ReactContextBaseJavaModule {
 
     private void startSpeechRecognition() {
         if (speechRecognizer != null) {
-            android.content.Intent intent = new android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-            intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-            intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
-            speechRecognizer.startListening(intent);
+            reactContext.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.Intent intent = new android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+                        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+                        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+                        speechRecognizer.startListening(intent);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error starting speech recognition", e);
+                    }
+                }
+            });
         }
     }
 
