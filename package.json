@@ -1,0 +1,60 @@
+{
+  "name": "react-native-voice-with-recording",
+  "version": "1.0.0",
+  "description": "React Native module for simultaneous voice recording and live transcription",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build",
+    "build": "tsc",
+    "prepare": "npm run build",
+    "publish:check": "npm pack --dry-run",
+    "publish:auto": "bash scripts/publish.sh"
+  },
+  "keywords": [
+    "react-native",
+    "voice",
+    "recording",
+    "transcription",
+    "speech-to-text",
+    "microphone",
+    "android",
+    "ios",
+    "native-module"
+  ],
+  "author": "Hassane LAGMOUR <officiellagmouri@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/react-native-voice-with-recording.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/react-native-voice-with-recording/issues"
+  },
+  "homepage": "https://github.com/yourusername/react-native-voice-with-recording#readme",
+  "peerDependencies": {
+    "react-native": ">=0.60.0"
+  },
+  "devDependencies": {
+    "@types/react-native": "^0.72.0",
+    "typescript": "^5.0.0"
+  },
+  "react-native": {
+    "android": {
+      "package": "com.voicerecording.VoiceWithRecordingModule"
+    },
+    "ios": {
+      "project": "ios/VoiceWithRecording.xcodeproj"
+    }
+  },
+  "files": [
+    "dist/",
+    "android/",
+    "ios/",
+    "scripts/",
+    "README.md",
+    "LICENSE",
+    "PUBLISHING.md"
+  ]
+} 
