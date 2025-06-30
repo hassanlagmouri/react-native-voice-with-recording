@@ -27,12 +27,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/react-native-voice-with-recording.git"
+    "url": "git+https://github.com/hassanlagmouri/react-native-voice-with-recording"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/react-native-voice-with-recording/issues"
+    "url": "https://github.com/hassanlagmouri/react-native-voice-with-recording/issues"
   },
-  "homepage": "https://github.com/yourusername/react-native-voice-with-recording#readme",
+  "homepage": "https://github.com/hassanlagmouri/react-native-voice-with-recording#readme",
   "peerDependencies": {
     "react-native": ">=0.60.0"
   },
