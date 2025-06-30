@@ -1,6 +1,6 @@
 {
   "name": "react-native-voice-with-recording",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "React Native module for simultaneous voice recording and live transcription",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
